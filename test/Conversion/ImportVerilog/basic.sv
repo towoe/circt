@@ -2346,13 +2346,18 @@ module ConcurrentAssert(input clk);
 
   // Sequence Concat
   // CHECK: moore.procedure always
-    // CHECK: [[READ_A:%.+]] = moore.read [[A]] : <i1>
-    // CHECK: [[CONV_A:%.+]] = moore.conversion [[READ_A]] : !moore.i1 -> i1
-    // CHECK: [[REPEAT_OP:%.+]] = ltl.repeat [[CONV_A]], 1 : i1
-    // CHECK: verif.assert [[REPEAT_OP]] : !ltl.sequence
+    // CHECK: [[READ_A0:%.+]] = moore.read [[A]] : <i1>
+    // CHECK: [[CONV_A0:%.+]] = moore.conversion [[READ_A0]] : !moore.i1 -> i1
+    // CHECK: [[REPEAT_A0:%.+]] = ltl.repeat [[CONV_A0]], 0 : i1
+    // CHECK: [[DELAY_A0:%.+]] = ltl.delay [[REPEAT_A0]], 0, 0 : !ltl.sequence
+    // CHECK: [[READ_A1:%.+]] = moore.read [[A]] : <i1>
+    // CHECK: [[CONV_A1:%.+]] = moore.conversion [[READ_A1]] : !moore.i1 -> i1
+    // CHECK: [[DELAY_A1:%.+]] = ltl.delay [[CONV_A1]], 0, 0 : i1
+    // CHECK: [[CONCAT_OP:%.+]] = ltl.concat [[DELAY_A0]], [[DELAY_A1]] : !ltl.sequence, !ltl.sequence
+    // CHECK: verif.assert [[CONCAT_OP]] : !ltl.sequence
     // CHECK: moore.return
   // CHECK: }
-  assert property (a [*]);
+  assert property (a [*] ##0 a);
   // CHECK: moore.procedure always
     // CHECK: [[READ_A:%.+]] = moore.read [[A]] : <i1>
     // CHECK: [[CONV_A:%.+]] = moore.conversion [[READ_A]] : !moore.i1 -> i1
