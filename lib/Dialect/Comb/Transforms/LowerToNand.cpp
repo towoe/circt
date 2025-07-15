@@ -74,6 +74,47 @@ struct OrToNandPattern : public OpRewritePattern<OrOp> {
     return success();
   }
 };
+
+/// Convert Xor operations to NAND operations
+/// xor(a, b) = nand(nand(a, nand(a,b)), nand(b, nand(a,b)))
+struct XorToNandPattern : public OpRewritePattern<XorOp> {
+  using OpRewritePattern::OpRewritePattern;
+
+  LogicalResult matchAndRewrite(XorOp op,
+                                PatternRewriter &rewriter) const override {
+    // For simplicity, handle binary XOR first
+    // Multi-input XOR can be built by chaining binary XORs
+    auto inputs = op.getInputs();
+    if (inputs.size() != 2) {
+      return rewriter.notifyMatchFailure(op,
+                                         "only binary XOR supported for now");
+    }
+
+    Value a = inputs[0];
+    Value b = inputs[1];
+
+    // xor(a,b) = nand(nand(a, nand(a,b)), nand(b, nand(a,b)))
+    // Step 1: inner_nand = nand(a, b)
+    auto innerNand = rewriter.create<NAndOp>(
+        op.getLoc(), op.getType(), ValueRange{a, b}, op.getTwoState());
+
+    // Step 2: left_nand = nand(a, inner_nand)
+    auto leftNand = rewriter.create<NAndOp>(
+        op.getLoc(), op.getType(), ValueRange{a, innerNand}, op.getTwoState());
+
+    // Step 3: right_nand = nand(b, inner_nand)
+    auto rightNand = rewriter.create<NAndOp>(
+        op.getLoc(), op.getType(), ValueRange{b, innerNand}, op.getTwoState());
+
+    // Step 4: result = nand(left_nand, right_nand)
+    auto result = rewriter.create<NAndOp>(op.getLoc(), op.getType(),
+                                          ValueRange{leftNand, rightNand},
+                                          op.getTwoState());
+
+    rewriter.replaceOp(op, result);
+    return success();
+  }
+};
 } // namespace
 
 namespace {
@@ -90,7 +131,7 @@ void LowerToNandPass::runOnOperation() {
   auto *context = &getContext();
   RewritePatternSet patterns(context);
 
-  patterns.add<AndToNandPattern, OrToNandPattern>(context);
+  patterns.add<AndToNandPattern, OrToNandPattern, XorToNandPattern>(context);
 
   if (failed(applyPatternsGreedily(getOperation(), std::move(patterns))))
     signalPassFailure();
