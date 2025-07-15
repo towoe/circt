@@ -22,6 +22,16 @@ def LowerComb : Pass<"lower-comb"> {
   }];
 }
 
+def LowerToNand : Pass<"comb-lower-to-nand"> {
+  let summary = "Convert operations to Nand operations";
+  let description = [{
+    This pass converts all comb.x operations to equivalent comb.nand
+    operations. This is useful for targeting architectures that have efficient
+    NAND implementations.
+  }];
+  let dependentDialects = ["circt::comb::CombDialect", "circt::hw::HWDialect"];
+}
+
 def CombIntRangeNarrowing : Pass<"comb-int-range-narrowing"> {
   let summary = "Reduce comb op bitwidth based on integer range analysis.";
   let description = [{
