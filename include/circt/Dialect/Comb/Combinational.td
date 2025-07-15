@@ -80,6 +80,7 @@ let hasFolder = true in {
   }
 }
 
+def NAndOp : UTVariadicOp<"nand", [Commutative]>;
 def AndOp : UTVariadicOp<"and", [Commutative]>;
 def OrOp  : UTVariadicOp<"or",  [Commutative]>;
 def XorOp : UTVariadicOp<"xor", [Commutative]> {

@@ -828,6 +828,49 @@ OpFoldResult AndOp::fold(FoldAdaptor adaptor) {
   return constFoldAssociativeOp(inputs, hw::PEO::And);
 }
 
+OpFoldResult NAndOp::fold(FoldAdaptor adaptor) {
+  APInt value = APInt::getAllOnes(cast<IntegerType>(getType()).getWidth());
+
+  auto inputs = adaptor.getInputs();
+
+  // nand(x, 01, 10) -> 11 -- annulment (inverse of and).
+  for (auto operand : inputs) {
+    if (!operand)
+      continue;
+    value &= cast<IntegerAttr>(operand).getValue();
+    if (value.isZero())
+      return getIntAttr(
+          APInt::getAllOnes(cast<IntegerType>(getType()).getWidth()),
+          getContext());
+  }
+
+  return {};
+}
+
+LogicalResult NAndOp::canonicalize(NAndOp op, PatternRewriter &rewriter) {
+  auto inputs = op.getInputs();
+  auto size = inputs.size();
+
+  // nand(x, nand(...)) -> nand(x, ...) -- flatten
+  if (tryFlatteningOperands(op, rewriter))
+    return success();
+
+  // Simple constant folding: nand(..., c1, c2) -> nand(..., c3) where c3 = ~(c1
+  // & c2)
+  APInt value, value2;
+  if (size >= 2 && matchPattern(inputs[size - 1], m_ConstantInt(&value)) &&
+      matchPattern(inputs[size - 2], m_ConstantInt(&value2))) {
+    auto cst = rewriter.create<hw::ConstantOp>(op.getLoc(), ~(value & value2));
+    SmallVector<Value, 4> newOperands(inputs.drop_back(/*n=*/2));
+    newOperands.push_back(cst);
+    replaceOpWithNewOpAndCopyNamehint<NAndOp>(rewriter, op, op.getType(),
+                                              newOperands, op.getTwoState());
+    return success();
+  }
+
+  return failure();
+}
+
 /// Returns a single common operand that all inputs of the operation `op` can
 /// be traced back to, or an empty `Value` if no such operand exists.
 ///

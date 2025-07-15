@@ -373,6 +373,8 @@ LogicalResult AddOp::verify() { return verifyUTBinOp(*this); }
 
 LogicalResult MulOp::verify() { return verifyUTBinOp(*this); }
 
+LogicalResult NAndOp::verify() { return verifyUTBinOp(*this); }
+
 LogicalResult AndOp::verify() { return verifyUTBinOp(*this); }
 
 LogicalResult OrOp::verify() { return verifyUTBinOp(*this); }

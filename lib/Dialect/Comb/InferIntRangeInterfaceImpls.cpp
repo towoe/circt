@@ -95,6 +95,25 @@ void comb::ModSOp::inferResultRanges(ArrayRef<ConstantIntRanges> argRanges,
                                      SetIntRangeFn setResultRange) {
   setResultRange(getResult(), inferRemS(argRanges));
 }
+
+//===----------------------------------------------------------------------===//
+// NAndOp
+//===----------------------------------------------------------------------===//
+
+void comb::NAndOp::inferResultRanges(ArrayRef<ConstantIntRanges> argRanges,
+                                     SetIntRangeFn setResultRange) {
+  auto resultRange = argRanges[0];
+  for (const auto &argRange : argRanges.drop_front())
+    resultRange = inferAnd({resultRange, argRange});
+
+  // NAND is the bitwise NOT of AND, so we invert the result
+  auto invMin = ~resultRange.umax();
+  auto invMax = ~resultRange.umin();
+  auto nandRange = ConstantIntRanges::fromUnsigned(invMin, invMax);
+
+  setResultRange(getResult(), nandRange);
+}
+
 //===----------------------------------------------------------------------===//
 // AndOp
 //===----------------------------------------------------------------------===//
