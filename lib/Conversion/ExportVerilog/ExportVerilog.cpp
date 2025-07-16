@@ -2416,6 +2416,20 @@ private:
                       EB_RequireSignedOperands | EB_ForceResultSigned |
                           EB_RHS_UnsignedWithSelfDeterminedWidth);
   }
+  SubExprInfo visitComb(NAndOp op) {
+    // Simple implementation - emit as ~(a & b & c)
+    ps << "~(";
+    bool first = true;
+    for (auto input : op.getInputs()) {
+      if (!first)
+        ps << " & ";
+      first = false;
+      emitSubExpr(input, VerilogPrecedence::And);
+    }
+    ps << ")";
+
+    return {VerilogPrecedence::Unary, IsUnsigned};
+  }
   SubExprInfo visitComb(AndOp op) {
     assert(op.getNumOperands() == 2 && "prelowering should handle variadics");
     return emitBinary(op, And, "&");
@@ -2517,7 +2531,7 @@ SubExprInfo ExprEmitter::emitBinary(Operation *op, VerilogPrecedence prec,
   // known-reassociative operators like +, ^, etc we don't need parens.
   // TODO: MLIR should have general "Associative" trait.
   auto rhsPrec = prec;
-  if (!isa<AddOp, MulOp, AndOp, OrOp, XorOp>(op))
+  if (!isa<AddOp, MulOp, NAndOp, AndOp, OrOp, XorOp>(op))
     rhsPrec = VerilogPrecedence(prec - 1);
 
   // If the RHS operand has self-determined width and always treated as

@@ -107,6 +107,14 @@ public:
     return results[root];
   }
 
+  void visitComb(comb::NAndOp op) {
+    auto res = APInt::getAllOnes(width);
+    for (auto operand : op->getOperands())
+      res &= results[operand];
+    // NAND is NOT AND, so invert the result
+    res.flipAllBits();
+    results[op.getResult()] = res;
+  }
   void visitComb(comb::AndOp op) {
     auto res = APInt::getAllOnes(width);
     for (auto operand : op->getOperands())

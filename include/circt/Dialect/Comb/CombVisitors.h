@@ -32,7 +32,7 @@ public:
             AddOp, SubOp, MulOp, DivUOp, DivSOp, ModUOp, ModSOp, ShlOp, ShrUOp,
             ShrSOp,
             // Bitwise operations
-            AndOp, OrOp, XorOp,
+            NAndOp, AndOp, OrOp, XorOp,
             // Comparison operations
             ICmpOp,
             // Reduction Operators
@@ -91,6 +91,7 @@ public:
   HANDLE(ShrUOp, Binary);
   HANDLE(ShrSOp, Binary);
 
+  HANDLE(NAndOp, Variadic);
   HANDLE(AndOp, Variadic);
   HANDLE(OrOp, Variadic);
   HANDLE(XorOp, Variadic);
