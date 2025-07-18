@@ -86,7 +86,7 @@ $ git fetch --unshallow
 
 3) **Build and test LLVM/MLIR:**
 
-```
+```sh
 $ cd circt
 $ mkdir llvm/build
 $ cd llvm/build
