@@ -14,21 +14,25 @@ For its internal representation, Yosys uses the
 [RTL Intermediate Language (RTLIL)](https://yosyshq.readthedocs.io/projects/yosys/en/latest/yosys_internals/formats/rtlil_rep.html).
 The RTLIL dialect reflects the design of this representation.
 In a simplistic view, RTLIL consists of modules which contain cells connected by
-wires. A cell is a container for logic and memory elements, specified by the
-type and further specialized with attributes.
-By mirroring the Yosys RTLIL IR in the CIRCT RTLIL dialect, the translation
-between the representations is straightforward.
+wires. A cell is either a module instance or an element of logic, memory,
+or special use, specified by its type field. Its function is specialized with
+parameters and extra information like source location is provided in discardable
+attributes. By mirroring conveniently simplified Yosys RTLIL in the CIRCT RTLIL
+dialect, the translation between the representations is straightforward.
 To convert a design to the RTLIL dialect, a pass transforms core dialect
 operations into RTLIL operations.
 
 ## Design considerations
 
-In Yosys RTLIL, logic and memory elements are represented by cells. The type of
-the cell is stored in a string parameter. The RTLIL dialect defines the
+In Yosys RTLIL, module instances and logic and memory elements are represented by cells.
+The type of the cell is stored in a string parameter. The RTLIL dialect defines the
 operation `CellOp` to represent this general cell and uses `CellOpInterface` to
 define common methods to work with a cell. Concrete operations like `MuxOp` use
 this interface to allow for a common access to the arguments, while defining
 distinct operations which access type arguments to the correct string value.
+Submodule instances are modeled with `InstanceOp`. The goal is to eventually avoid
+`CellOp` from surviving RTLIL import as all will be converted to known concrete
+types or instances.
 
 Yosys uses multi-valued logic. This is expressed with `MValueType`, which is a
 bit array of states, where each state can be of: low, high, unknown,
